@@ -1,0 +1,10 @@
+version: "3"
+services:
+  bot:
+    build: .
+    environment:
+      BOT_ID: $BOT_ID
+    volumes:
+      - ./:/src/ukeuri
+    working_dir: /src/ukeuri
+    command: "go run main.go"
