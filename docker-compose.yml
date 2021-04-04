@@ -3,7 +3,8 @@ services:
   bot:
     build: .
     environment:
-      BOT_ID: $BOT_ID
+      LISTENER_BOT_ID: $LISTENER_BOT_ID
+      SPEAKER_BOT_ID: $SPEAKER_BOT_ID
     volumes:
       - ./:/src/ukeuri
     working_dir: /src/ukeuri
