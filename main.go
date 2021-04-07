@@ -11,14 +11,7 @@ import (
 )
 
 func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-	listenerSession.Token = "Bot " + config.ListenerBotID
-	speakerSession.Token = "Bot " + config.SpeakerBotID
-
-	err = listenerSession.Open()
+	err := listenerSession.Open()
 	if err != nil {
 		log.Println("Failed : Start Listener Bot")
 		return err
@@ -48,12 +41,17 @@ func stop(listenerSession *discordgo.Session, speakerSession *discordgo.Session)
 }
 
 func main() {
-	listenerSession, err := discordgo.New()
+	config, err := config.GetConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	speakerSession, err := discordgo.New()
+	listenerSession, err := discordgo.New("Bot " + config.ListenerBotID)
+	if err != nil {
+		panic(err)
+	}
+
+	speakerSession, err := discordgo.New("Bot " + config.SpeakerBotID)
 	if err != nil {
 		panic(err)
 	}
