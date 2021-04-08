@@ -10,6 +10,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+func onMessageRecieved(session *discordgo.Session, event *discordgo.MessageCreate) {
+
+}
+
 func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session) error {
 	err := listenerSession.Open()
 	if err != nil {
@@ -22,6 +26,9 @@ func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session
 		log.Println("Failed : Start Speaker Bot")
 		return err
 	}
+
+	listenerSession.AddHandler(onMessageRecieved)
+	speakerSession.AddHandler(onMessageRecieved)
 
 	return nil
 }
