@@ -11,7 +11,22 @@ import (
 )
 
 func onMessageRecieved(session *discordgo.Session, event *discordgo.MessageCreate) {
-
+	// mentionされたときのみ処理を通す
+	me, err := session.User("@me")
+	if err != nil {
+		return
+	}
+	if len(event.Mentions) == 0 {
+		return
+	}
+	for i, user := range event.Mentions {
+		if user.ID == me.ID {
+			break
+		}
+		if i+1 == len(event.Mentions) {
+			return
+		}
+	}
 }
 
 func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session) error {
