@@ -12,7 +12,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func onMessageRecieved(session *discordgo.Session, event *discordgo.MessageCreate) {
+func onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
 	// mentionされたときのみ処理を通す
 	me, err := session.User("@me")
 	if err != nil {
@@ -77,8 +77,8 @@ func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session
 		return err
 	}
 
-	listenerSession.AddHandler(onMessageRecieved)
-	speakerSession.AddHandler(onMessageRecieved)
+	listenerSession.AddHandler(onMessageReceived)
+	speakerSession.AddHandler(onMessageReceived)
 
 	return nil
 }
