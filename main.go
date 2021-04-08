@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
+	"strings"
 	"syscall"
 	"ukeuri/config"
 
@@ -26,6 +28,39 @@ func onMessageRecieved(session *discordgo.Session, event *discordgo.MessageCreat
 		if i+1 == len(event.Mentions) {
 			return
 		}
+	}
+
+	config, err := config.GetConfig()
+	if err != nil {
+		log.Fatalln("configの取得に失敗")
+		return
+	}
+
+	botIDPattern := regexp.MustCompile(`<@\!\d*>`)
+	str := botIDPattern.ReplaceAllString(event.Content, "")
+	str = strings.TrimSpace(str)
+	command := strings.Split(str, " ")
+
+	// Help
+	if command[0] == config.HelpCommand {
+		message := &discordgo.MessageEmbed{
+			Title: "ヘルプ",
+			Fields: []*discordgo.MessageEmbedField{{
+				Name:   "VCへ参加",
+				Value:  "`<Mention> " + config.JoinCommand + " <VoiceChannelName>`",
+				Inline: true,
+			}, {
+				Name:   "VCから退出",
+				Value:  "`<Mention>" + config.LeaveCommand + "`",
+				Inline: true,
+			}},
+		}
+
+		_, err = session.ChannelMessageSendEmbed(event.ChannelID, message)
+		if err != nil {
+			log.Fatalln("ヘルプメッセージの送信に失敗")
+		}
+		return
 	}
 }
 

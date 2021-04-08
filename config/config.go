@@ -7,16 +7,18 @@ import (
 )
 
 type Config struct {
-	ListenerBotID       string `envs:"LISTENER_BOT_ID"`
-	SpeakerBotID        string `envs:"SPEAKER_BOT_ID"`
-	StartTriggerMessage string
-	StopTriggerMessage  string
+	ListenerBotID string `envs:"LISTENER_BOT_ID"`
+	SpeakerBotID  string `envs:"SPEAKER_BOT_ID"`
+	HelpCommand   string
+	JoinCommand   string
+	LeaveCommand  string
 }
 
 func GetConfig() (Config, error) {
 	config := &Config{
-		StartTriggerMessage: "start",
-		StopTriggerMessage:  "stop",
+		HelpCommand:  "help",
+		JoinCommand:  "join",
+		LeaveCommand: "leave",
 	}
 
 	err := envs.Load(config)
