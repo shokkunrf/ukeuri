@@ -12,7 +12,15 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
+const (
+	VOICE_CHANNEL_TYPE = 2
+)
+
+type Status struct {
+	Connection *discordgo.VoiceConnection
+}
+
+func (status Status) onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
 	// mentionされたときのみ処理を通す
 	me, err := session.User("@me")
 	if err != nil {
@@ -62,6 +70,30 @@ func onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreat
 		}
 		return
 	}
+
+	// Join VC
+	if command[0] == config.JoinCommand {
+		if len(command) == 1 {
+			return
+		}
+		channelName := command[1]
+
+		guild, err := session.State.Guild(event.GuildID)
+		if err != nil {
+			log.Fatalln(err)
+			return
+		}
+
+		for _, channel := range guild.Channels {
+			if channel.Name == channelName && channel.Type == VOICE_CHANNEL_TYPE {
+				status.Connection, err = session.ChannelVoiceJoin(guild.ID, channel.ID, false, false)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				return
+			}
+		}
+	}
 }
 
 func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session) error {
@@ -77,8 +109,10 @@ func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session
 		return err
 	}
 
-	listenerSession.AddHandler(onMessageReceived)
-	speakerSession.AddHandler(onMessageReceived)
+	listenerStatus := Status{}
+	listenerSession.AddHandler(listenerStatus.onMessageReceived)
+	speakerStatus := Status{}
+	speakerSession.AddHandler(speakerStatus.onMessageReceived)
 
 	return nil
 }
