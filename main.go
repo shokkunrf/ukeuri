@@ -20,7 +20,7 @@ type Status struct {
 	Connection *discordgo.VoiceConnection
 }
 
-func (status Status) onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
+func (status *Status) onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
 	// mentionされたときのみ処理を通す
 	me, err := session.User("@me")
 	if err != nil {
@@ -93,6 +93,19 @@ func (status Status) onMessageReceived(session *discordgo.Session, event *discor
 				return
 			}
 		}
+	}
+
+	// Leave VC
+	if command[0] == config.LeaveCommand {
+		if status.Connection == nil {
+			return
+		}
+
+		err = status.Connection.Disconnect()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return
 	}
 }
 
