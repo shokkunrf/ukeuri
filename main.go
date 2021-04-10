@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"ukeuri/config"
 
+	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -18,6 +19,32 @@ const (
 
 type Status struct {
 	Connection *discordgo.VoiceConnection
+	// OnVoiceReceived discordgo.VoiceSpeakingUpdateHandler
+	OnVoiceReceived func(*discordgo.VoiceConnection, chan *discordgo.Packet)
+	recv            chan *discordgo.Packet
+}
+
+func listenerOnVoiceReceived(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
+	// VC受信
+	go dgvoice.ReceivePCM(vc, recv)
+}
+
+func speakerOnVoiceReceived(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
+	// VC送信
+	send := make(chan []int16, 2)
+	go dgvoice.SendPCM(vc, send)
+
+	vc.Speaking(true)
+	defer vc.Speaking(false)
+
+	for {
+		p, ok := <-recv
+		if !ok {
+			return
+		}
+
+		send <- p.PCM
+	}
 }
 
 func (status *Status) onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
@@ -90,6 +117,8 @@ func (status *Status) onMessageReceived(session *discordgo.Session, event *disco
 				if err != nil {
 					log.Fatalln(err)
 				}
+
+				status.OnVoiceReceived(status.Connection, status.recv)
 				return
 			}
 		}
@@ -122,9 +151,18 @@ func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session
 		return err
 	}
 
-	listenerStatus := Status{}
+	recv := make(chan *discordgo.Packet, 2)
+
+	listenerStatus := Status{
+		OnVoiceReceived: listenerOnVoiceReceived,
+		recv:            recv,
+	}
 	listenerSession.AddHandler(listenerStatus.onMessageReceived)
-	speakerStatus := Status{}
+
+	speakerStatus := Status{
+		OnVoiceReceived: speakerOnVoiceReceived,
+		recv:            recv,
+	}
 	speakerSession.AddHandler(speakerStatus.onMessageReceived)
 
 	return nil
