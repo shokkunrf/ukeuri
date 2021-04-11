@@ -17,19 +17,18 @@ const (
 	VOICE_CHANNEL_TYPE = 2
 )
 
-type Status struct {
-	Connection *discordgo.VoiceConnection
-	// OnVoiceReceived discordgo.VoiceSpeakingUpdateHandler
-	OnVoiceReceived func(*discordgo.VoiceConnection, chan *discordgo.Packet)
-	recv            chan *discordgo.Packet
+type VoiceChat struct {
+	Connection    *discordgo.VoiceConnection
+	ReceivedVoice chan *discordgo.Packet
+	Communicate   func(*discordgo.VoiceConnection, chan *discordgo.Packet)
 }
 
-func listenerOnVoiceReceived(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
+func listen(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
 	// VC受信
 	go dgvoice.ReceivePCM(vc, recv)
 }
 
-func speakerOnVoiceReceived(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
+func speak(vc *discordgo.VoiceConnection, recv chan *discordgo.Packet) {
 	// VC送信
 	send := make(chan []int16, 2)
 	go dgvoice.SendPCM(vc, send)
@@ -47,7 +46,7 @@ func speakerOnVoiceReceived(vc *discordgo.VoiceConnection, recv chan *discordgo.
 	}
 }
 
-func (status *Status) onMessageReceived(session *discordgo.Session, event *discordgo.MessageCreate) {
+func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
 	// mentionされたときのみ処理を通す
 	me, err := session.User("@me")
 	if err != nil {
@@ -113,12 +112,12 @@ func (status *Status) onMessageReceived(session *discordgo.Session, event *disco
 
 		for _, channel := range guild.Channels {
 			if channel.Name == channelName && channel.Type == VOICE_CHANNEL_TYPE {
-				status.Connection, err = session.ChannelVoiceJoin(guild.ID, channel.ID, false, false)
+				voiceChat.Connection, err = session.ChannelVoiceJoin(guild.ID, channel.ID, false, false)
 				if err != nil {
 					log.Fatalln(err)
 				}
 
-				status.OnVoiceReceived(status.Connection, status.recv)
+				voiceChat.Communicate(voiceChat.Connection, voiceChat.ReceivedVoice)
 				return
 			}
 		}
@@ -126,11 +125,11 @@ func (status *Status) onMessageReceived(session *discordgo.Session, event *disco
 
 	// Leave VC
 	if command[0] == config.LeaveCommand {
-		if status.Connection == nil {
+		if voiceChat.Connection == nil {
 			return
 		}
 
-		err = status.Connection.Disconnect()
+		err = voiceChat.Connection.Disconnect()
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -153,17 +152,17 @@ func start(listenerSession *discordgo.Session, speakerSession *discordgo.Session
 
 	recv := make(chan *discordgo.Packet, 2)
 
-	listenerStatus := Status{
-		OnVoiceReceived: listenerOnVoiceReceived,
-		recv:            recv,
+	listenerVoiceChat := VoiceChat{
+		Communicate:   listen,
+		ReceivedVoice: recv,
 	}
-	listenerSession.AddHandler(listenerStatus.onMessageReceived)
+	listenerSession.AddHandler(listenerVoiceChat.receiveMessage)
 
-	speakerStatus := Status{
-		OnVoiceReceived: speakerOnVoiceReceived,
-		recv:            recv,
+	speakerVoiceChat := VoiceChat{
+		Communicate:   speak,
+		ReceivedVoice: recv,
 	}
-	speakerSession.AddHandler(speakerStatus.onMessageReceived)
+	speakerSession.AddHandler(speakerVoiceChat.receiveMessage)
 
 	return nil
 }
