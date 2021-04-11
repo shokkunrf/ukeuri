@@ -75,8 +75,8 @@ func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *di
 	str = strings.TrimSpace(str)
 	command := strings.Split(str, " ")
 
-	// Help
-	if command[0] == config.HelpCommand {
+	switch command[0] {
+	case config.HelpCommand:
 		message := &discordgo.MessageEmbed{
 			Title: "ヘルプ",
 			Fields: []*discordgo.MessageEmbedField{{
@@ -94,11 +94,8 @@ func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *di
 		if err != nil {
 			log.Fatalln("ヘルプメッセージの送信に失敗")
 		}
-		return
-	}
 
-	// Join VC
-	if command[0] == config.JoinCommand {
+	case config.JoinCommand:
 		if len(command) == 1 {
 			return
 		}
@@ -121,10 +118,8 @@ func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *di
 				return
 			}
 		}
-	}
 
-	// Leave VC
-	if command[0] == config.LeaveCommand {
+	case config.LeaveCommand:
 		if voiceChat.Connection == nil {
 			return
 		}
@@ -133,7 +128,6 @@ func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *di
 		if err != nil {
 			log.Fatalln(err)
 		}
-		return
 	}
 }
 
