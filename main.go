@@ -174,6 +174,13 @@ func stop(listenerSession *discordgo.Session, speakerSession *discordgo.Session)
 		return err
 	}
 
+	for _, connection := range speakerSession.VoiceConnections {
+		err := connection.Disconnect()
+		if err != nil {
+			return err
+		}
+	}
+
 	err = speakerSession.Close()
 	if err != nil {
 		return err
