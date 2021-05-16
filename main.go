@@ -85,7 +85,7 @@ func (voiceChat *VoiceChat) receiveMessage(session *discordgo.Session, event *di
 				Inline: true,
 			}, {
 				Name:   "VCから退出",
-				Value:  "`<Mention>" + config.LeaveCommand + "`",
+				Value:  "`<Mention> " + config.LeaveCommand + "`",
 				Inline: true,
 			}},
 		}
